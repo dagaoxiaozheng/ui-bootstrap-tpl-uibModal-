@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="app" ng-controller="indexController">
+<head>
+    <meta charset="UTF-8">
+    <title>ui-bootstrap之弹窗</title>
+    <link rel="stylesheet" href="./bootstrap.min.css">
+</head>
+<body>
+<table class="table table-striped">
+    <thead>
+    <tr>
+        <th>姓名</th>
+        <th>性别</th>
+        <th>年龄</th>
+        <th>操作</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr ng-repeat="user in userlist">
+        <td>{{user.name}}</td>
+        <td>{{user.sex}}</td>
+        <td>{{user.age}}</td>
+        <td><span style="cursor: pointer" ng-click="edit(user)">编辑</span>&nbsp;&nbsp;&nbsp;<span style="cursor: pointer"
+                                                                                                 ng-click="delete(user.name)">删除</span>
+        </td>
+    </tr>
+    </tbody>
+</table>
+<button ng-click="add()">点我添加</button>
+
+<script src="./angular.min.js"></script>
+<script src="./ui-bootstrap-tpls.min.js"></script>
+<script>
+    var app = angular.module('app', ['ui.bootstrap']);
+    app.run(function ($rootScope) {
+        $rootScope.userlist = [];
+    })
+    app.controller('indexController', ['$scope', '$rootScope', '$uibModal', function ($scope, $rootScope, $uibModal) {
+        $scope.userlist = $rootScope.userlist;
+
+        $scope.uibModal = function (action, info) {
+            $uibModal.open({
+                templateUrl: './modal.html',
+                controller: 'modalController',
+                backdrop: 'static', /*控制背景，允许的值：true（默认），false（无背景），“static” - 背景是存在的，但点击模态窗口之外时，模态窗口不关闭*/
+                keyboard: false, //当按下Esc时，模态对话框是否关闭，默认为ture
+                resolve: {
+                    /*定义一个成员并将他传递给$modal指定的控制器，相当于routes的一个reslove属性，如果需要传递一个objec对象，需要使用angular.copy()*/
+                    action: action,
+                    info: info
+                }
+            }).result.then(function (data) {
+                $scope.userlist = $rootScope.userlist;
+                console.log(data);
+            }, function (data) {
+                console.log(data);
+            });
+        };
+
+        $scope.add = function () {
+            $scope.uibModal(1, {});
+        };
+
+        $scope.edit = function (data) {
+            $scope.uibModal(2, data);
+        };
+
+        $scope.delete = function (info_name) {
+            $uibModal.open({
+                templateUrl: './confirm.html',
+                controller: 'confirmController',
+                backdrop: 'static', /*控制背景，允许的值：true（默认），false（无背景），“static” - 背景是存在的，但点击模态窗口之外时，模态窗口不关闭*/
+                keyboard: false,
+                size: 'sm',
+                resolve: {
+                    info_name: function () {
+                        return info_name;
+                    }
+                }
+            }).result.then(function (data) {
+                $scope.userlist = $rootScope.userlist;
+            }, function (data) {
+            });
+        }
+    }])
+
+    app.controller('modalController', ['$scope', '$rootScope', '$uibModalInstance', 'action', 'info', function ($scope, $rootScope, $uibModalInstance, action, info) {
+        $scope.action = action;
+        $scope.info = info;
+
+        $scope.confirm = function () {
+            if ($scope.action === 1) {
+                $rootScope.userlist.push(info);
+            } else {
+                angular.forEach($rootScope.userlist, function (item) {
+                    item.name == $scope.info.name ? item = $scope.info : '';
+                })
+            }
+            $uibModalInstance.close();
+        }
+
+        $scope.cancel = function () {
+            $uibModalInstance.dismiss('取消');
+        }
+    }])
+
+    app.controller('confirmController', ['$scope', '$rootScope', '$uibModalInstance', 'info_name', function ($scope, $rootScope, $uibModalInstance, info_name) {
+        $scope.info_name = info_name;
+        $scope.confirm = function () {
+            angular.forEach($rootScope.userlist, function (item, ind) {
+                if (item.name == $scope.info_name) {
+                    $rootScope.userlist.splice(ind, 1);
+                }
+            })
+            $uibModalInstance.close();
+        }
+        $scope.cancel = function () {
+            $uibModalInstance.dismiss('cancel');
+        }
+    }])
+</script>
+</body>
+</html>
